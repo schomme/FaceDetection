@@ -2,9 +2,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using FaceDetector.Models;
 using FaceONNX;
 using Image = FaceDetector.Models.Image;
 
@@ -85,10 +82,10 @@ class ImageManipulationService
         return destImage;
     }
 
-    public Bitmap CropImage(Image image, Rectangle area)
+    public Bitmap CropImage(Image image, Rectangle area, double offset = 0.0d)
     {
-        var widthDelta = area.Width * 0.1;
-        var HeightDelta = area.Height * 0.1;
+        var widthDelta = area.Width * offset;
+        var HeightDelta = area.Height * offset;
 
         var X = widthDelta > area.X ? 0 : area.X - widthDelta;
         var Y = HeightDelta > area.Y ? 0 : area.Y - HeightDelta;
@@ -97,6 +94,19 @@ class ImageManipulationService
 
         var rect = new Rectangle((int)X, (int)Y, (int)W, (int)H);
         return image.Bitmap.Clone(rect, image.Bitmap.PixelFormat);
+    }
+
+    public Bitmap CropImageQuadratic(Image image, Rectangle area)
+    {
+        var width = area.Width > area.Height ? area.Width : area.Height;
+        var centerX = area.Left + area.Width / 2;
+        var centerY = area.Top + area.Height / 2;
+
+        var left = centerX - width / 2;
+        var top = centerY - width / 2;
+
+        var rect = new Rectangle(left, top, width, width);
+        return CropImage(image, rect);
     }
 
     public void SaveImage(Bitmap bitmap, string filename)

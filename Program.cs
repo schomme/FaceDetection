@@ -1,6 +1,6 @@
 ﻿using Image = FaceDetector.Models.Image;
 using FaceDetector.Services;
-using System.Diagnostics;
+using FaceONNX;
 
 //https://github.com/FaceONNX/FaceONNX/blob/main/netstandard/Examples/FaceDetection/Program.cs
 
@@ -16,16 +16,24 @@ await faceDetectionService.DetectFacesAsync(images);
 
 
 //FILTER IMAGES
-images = [.. images.Where(i => i.FaceDetectionResults.Count == 1)];
-
+//images = [.. images.Where(i => i.FaceDetectionResults.Count == 1)];
 
 //CROP IMAGES
 var imageManipulationService = new ImageManipulationService();
 
 foreach (var image in images)
 {
-    Debug.WriteLine($"Cropping Image: {image.FilePath}");
-    var newFilePath = Path.Combine(resultsFolder, Path.GetFileName(image.FilePath));
-    var croppedImage = imageManipulationService.CropImage(image, image.FaceDetectionResults.First().Rectangle);
-    imageManipulationService.SaveImage(croppedImage, newFilePath);
+    for (int i = 0; i < image.FaceDetectionResults.Count; i++)
+    {
+        var result = image.FaceDetectionResults[i];
+        //Skip small images
+        //if (image.FaceDetectionResults[i].Rectangle.Width < 500 || image.FaceDetectionResults[i].Rectangle.Height < 500) continue;
+
+        Console.WriteLine($"Cropping Image: {image.FilePath} | Face: {i + 1} of {image.FaceDetectionResults.Count}");
+        var newFilePath = Path.Combine(resultsFolder, $"{Path.GetFileNameWithoutExtension(image.FilePath)}_{i}{Path.GetExtension(image.FilePath)}");
+        System.Console.WriteLine($"Width: {result.Rectangle.Width} | Height: {result.Rectangle.Height} | Angle: {result.Points.RotationAngle}");
+        var croppedImage = FaceProcessingExtensions.Align(image.Bitmap, result.Rectangle, result.Points.RotationAngle);
+        //var croppedImage = imageManipulationService.CropImageQuadratic(image, result.Rectangle);
+        imageManipulationService.SaveImage(croppedImage, newFilePath);
+    }
 }
