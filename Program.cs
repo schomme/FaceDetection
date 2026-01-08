@@ -2,19 +2,23 @@
 using FaceDetector.Services;
 using FaceONNX;
 using Microsoft.Extensions.DependencyInjection;
+using facedetector.Services;
 
 
 var serviceCollection = new ServiceCollection();
 serviceCollection.AddScoped<FaceDetectionService>();
 serviceCollection.AddScoped<IFaceDetector,FaceONNX.FaceDetector>();
 serviceCollection.AddScoped<ImageManipulationService>();
+serviceCollection.AddScoped<IFileProviderService, LocalFileProviderService>();
 var serviceProvider = serviceCollection.BuildServiceProvider();
 
 
 //LOAD IMAGES
 const string folderPath = @"C:\Users\TobiasSchomakers\OneDrive_Personal\OneDrive\Bilder\Eigene Aufnahmen\2025\09";
 const string resultsFolder = @"D:\results";
-var images = Directory.EnumerateFiles(folderPath, "*.jpg", SearchOption.AllDirectories).Select(i => new Image(i)).ToList();
+var fileProviderService = serviceProvider.GetRequiredService<IFileProviderService>();
+
+var images = await fileProviderService.LoadImagesAsync(folderPath, "*.jpg");
 
 
 //DETECT FACES
