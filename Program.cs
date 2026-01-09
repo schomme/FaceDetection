@@ -3,26 +3,28 @@ using FaceDetector.Services;
 using FaceONNX;
 using Microsoft.Extensions.DependencyInjection;
 using facedetector.Services;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 
 
-var serviceCollection = new ServiceCollection();
-serviceCollection.AddScoped<FaceDetectionService>();
-serviceCollection.AddScoped<IFaceDetector,FaceONNX.FaceDetector>();
-serviceCollection.AddScoped<ImageManipulationService>();
-serviceCollection.AddScoped<IFileProviderService, LocalFileProviderService>();
-var serviceProvider = serviceCollection.BuildServiceProvider();
-
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddScoped<FaceDetectionService>();
+builder.Services.AddScoped<IFaceDetector, FaceONNX.FaceDetector>();
+builder.Services.AddScoped<ImageManipulationService>();
+builder.Services.AddScoped<IFileProviderService, LocalFileProviderService>();
+builder.Configuration.AddJsonFile("appsettings.json", optional: false);
+var host = builder.Build();
 
 //LOAD IMAGES
 const string folderPath = @"C:\Users\TobiasSchomakers\OneDrive_Personal\OneDrive\Bilder\Eigene Aufnahmen\2025\09";
 const string resultsFolder = @"D:\results";
-var fileProviderService = serviceProvider.GetRequiredService<IFileProviderService>();
+var fileProviderService = host.Services.GetRequiredService<IFileProviderService>();
 
 var images = await fileProviderService.LoadImagesAsync(folderPath, "*.jpg");
 
 
 //DETECT FACES
-var faceDetectionService = serviceProvider.GetRequiredService<FaceDetectionService>();
+var faceDetectionService = host.Services.GetRequiredService<FaceDetectionService>();
 await faceDetectionService.DetectFacesAsync(images);
 
 
@@ -30,7 +32,7 @@ await faceDetectionService.DetectFacesAsync(images);
 //images = [.. images.Where(i => i.FaceDetectionResults.Count == 1)];
 
 //CROP IMAGES
-var imageManipulationService = serviceProvider.GetRequiredService<ImageManipulationService>();
+var imageManipulationService = host.Services.GetRequiredService<ImageManipulationService>();
 
 foreach (var image in images)
 {
